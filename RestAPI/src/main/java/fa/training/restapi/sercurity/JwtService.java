@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -16,11 +17,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class JwtService {
 
     private static final String SECRET_STRING = "enterprise_secret_key_must_be_extremely_long_and_secure_2026_jsfw_l_a102";
     private final Key signingKey = Keys.hmacShaKeyFor(SECRET_STRING.getBytes());
     private static final long ACCESS_TOKEN_EXPIRATION_MINUTES = 15;
+    private final BlackListService blackListService;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -53,7 +56,7 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
+        return (username.equals(userDetails.getUsername())) && !isTokenExpired(token) && !blackListService.isTokenBlacklisted(token);
     }
 
     private boolean isTokenExpired(String token) {

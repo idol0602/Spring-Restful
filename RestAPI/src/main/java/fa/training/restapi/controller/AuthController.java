@@ -5,7 +5,9 @@ import fa.training.restapi.dto.request.RegisterRequest;
 import fa.training.restapi.dto.response.ApiResponse;
 import fa.training.restapi.dto.response.AuthenticationResponse;
 import fa.training.restapi.dto.response.LoginResult;
+import fa.training.restapi.sercurity.BlackListService;
 import fa.training.restapi.sercurity.CookieService;
+import fa.training.restapi.sercurity.JwtService;
 import fa.training.restapi.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final CookieService cookieService;
+    private final BlackListService blackListService;
+    private final JwtService jwtService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthenticationResponse>> login(
@@ -80,15 +84,30 @@ public class AuthController {
         return ResponseEntity.ok(responseBody);
     }
 
-    // NEED CHECK
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if(authentication != null && authentication.getName() != null) {
             authService.logout(authentication.getName());
         }
 
         cookieService.clearTokenCookies(response);
+        
+        String accessToken = cookieService.extractTokenFromCookie(request, CookieService.ACCESS_TOKEN_COOKIE);
+        if (accessToken == null || accessToken.isEmpty()) {
+            String authenHeader = request.getHeader("Authorization");
+            if (authenHeader != null && authenHeader.startsWith("Bearer ")) {
+                accessToken = authenHeader.substring(7);
+            }
+        }
+
+        if (accessToken != null && !accessToken.isEmpty()) {
+            try {
+                blackListService.revokeToken(accessToken, jwtService.extractExpirationAsLocalDateTime(accessToken));
+            } catch (Exception e) {
+                // Ignore invalid token on logout
+            }
+        }
 
         ApiResponse<Void> responseBody = ApiResponse.<Void>builder()
                 .success(true)

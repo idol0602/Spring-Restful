@@ -85,7 +85,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                                    "Unauthorized: Vui lòng đăng nhập!");
+                                    "Unauthorized: Plase to signin");
                         }));
         return http.build();
     }

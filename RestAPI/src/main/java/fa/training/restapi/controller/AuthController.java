@@ -86,33 +86,33 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response) {
+        String accessToken = extractAccessToken(request);
+        String refreshToken = cookieService.extractTokenFromCookie(request, CookieService.REFRESH_TOKEN_COOKIE);
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if(authentication != null && authentication.getName() != null) {
-            authService.logout(authentication.getName());
+        String username = null;
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+            username = authentication.getName();
         }
 
+        authService.logout(accessToken, refreshToken, username);
         cookieService.clearTokenCookies(response);
-        
-        String accessToken = cookieService.extractTokenFromCookie(request, CookieService.ACCESS_TOKEN_COOKIE);
-        if (accessToken == null || accessToken.isEmpty()) {
-            String authenHeader = request.getHeader("Authorization");
-            if (authenHeader != null && authenHeader.startsWith("Bearer ")) {
-                accessToken = authenHeader.substring(7);
-            }
-        }
-
-        if (accessToken != null && !accessToken.isEmpty()) {
-            try {
-                blackListService.revokeToken(accessToken, jwtService.extractExpirationAsLocalDateTime(accessToken));
-            } catch (Exception e) {
-                // Ignore invalid token on logout
-            }
-        }
 
         ApiResponse<Void> responseBody = ApiResponse.<Void>builder()
                 .success(true)
                 .message("Logout successful")
                 .build();
         return ResponseEntity.ok(responseBody);
+    }
+
+    private String extractAccessToken(HttpServletRequest request) {
+        String accessToken = cookieService.extractTokenFromCookie(request, CookieService.ACCESS_TOKEN_COOKIE);
+        if (accessToken == null || accessToken.isEmpty()) {
+            String authenHeader = request.getHeader("Authorization");
+            if (authenHeader != null && authenHeader.startsWith("Bearer ")) {
+                return authenHeader.substring(7);
+            }
+        }
+        return accessToken;
     }
 }

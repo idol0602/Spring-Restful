@@ -136,11 +136,10 @@ public class CourseController {
         public ResponseEntity<ApiResponse<List<Course>>> importCourses(
                         @RequestParam("file") MultipartFile file) {
                 try {
-                        List<Course> savedCourses = courseService.importFromCsv(file);
+                        courseService.importFromCsv(file);
                         ApiResponse<List<Course>> responseBody = ApiResponse.<List<Course>>builder()
                                         .success(true)
                                         .message("Courses imported successfully")
-                                        .result(savedCourses)
                                         .build();
                         return new ResponseEntity<>(responseBody, HttpStatus.CREATED);
                 } catch (Exception e) {

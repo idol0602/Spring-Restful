@@ -102,14 +102,13 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
 
     @Override
     @Transactional
-    public List<T> saveAll(List<T> entities) {
+    public void saveAll(List<T> entities) {
         if (entities == null || entities.isEmpty()) {
-            return entities;
+            return;
         }
         int batchSize = 50;
-        List<T> savedEntities = new ArrayList<>();
         for (int i = 0; i < entities.size(); i++) {
-            savedEntities.add(repository.save(entities.get(i)));
+            repository.save(entities.get(i));
             
             if (i > 0 && i % batchSize == 0) {
                 repository.flush();
@@ -118,7 +117,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         }
         repository.flush();
         entityManager.clear();
-        return savedEntities;
     }
 
     @Override
@@ -189,7 +187,7 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
 
     @Override
     @Transactional
-    public List<T> importFromCsv(MultipartFile file) {
+    public void importFromCsv(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new RuntimeException("File is empty or null");
         }
@@ -203,7 +201,7 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         try (InputStream inputStream = file.getInputStream();
              BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
-            if (headerLine == null) return entities;
+            if (headerLine == null) return;
 
             if (headerLine.startsWith("\uFEFF")) {
                 headerLine = headerLine.substring(1); // Handle BOM
@@ -240,7 +238,7 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
             throw new RuntimeException("Failed to import CSV", e);
         }
 
-        return saveAll(entities);
+        saveAll(entities);
     }
 
     private Object convertValue(String value, Class<?> type) {

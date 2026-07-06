@@ -16,8 +16,8 @@ public interface GenericService<T,ID> {
     boolean existsById(ID id);
     Page<T> findAll(Pageable pageable);
     
-    List<T> saveAll(List<T> entities);
+    void saveAll(List<T> entities);
     void deleteAll(List<ID> ids);
     void exportToCsv(OutputStream outputStream);
-    List<T> importFromCsv(MultipartFile file);
+    void importFromCsv(MultipartFile file);
 }

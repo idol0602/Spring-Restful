@@ -21,7 +21,13 @@ import static jakarta.persistence.CascadeType.*;
 @EqualsAndHashCode(exclude = "users")
 public class Role {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "role_seq_gen")
+    @SequenceGenerator(
+            name = "role_seq_gen",
+            sequenceName = "role_seq_id",
+            initialValue = 1,
+            allocationSize = 1
+    )
     private Long roleId;
 
     @Nationalized

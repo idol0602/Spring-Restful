@@ -16,7 +16,13 @@ import org.hibernate.annotations.Nationalized;
 public class Course {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "course_seq_gen")
+    @SequenceGenerator(
+            name = "course_seq_gen",
+            sequenceName = "course_seq_id",
+            initialValue = 1,
+            allocationSize = 1
+    )
     private Long courseId;
 
     @Nationalized

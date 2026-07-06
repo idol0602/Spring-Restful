@@ -6,6 +6,7 @@ import fa.training.restapi.entity.Course;
 import fa.training.restapi.service.CourseService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
@@ -90,7 +91,7 @@ public class CourseController {
         // Get courses with pagination
         @GetMapping("/page")
         @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
-        public ResponseEntity<ApiResponse<Page<Course>>> getCoursesPage(Pageable pageable) {
+        public ResponseEntity<ApiResponse<Page<Course>>> getCoursesPage(@ParameterObject Pageable pageable) {
                 Page<Course> page = courseService.findAll(pageable);
                 ApiResponse<Page<Course>> responseBody = ApiResponse.<Page<Course>>builder()
                                 .success(true)

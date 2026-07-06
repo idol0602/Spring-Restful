@@ -5,9 +5,7 @@ import fa.training.restapi.dto.request.RegisterRequest;
 import fa.training.restapi.dto.response.ApiResponse;
 import fa.training.restapi.dto.response.AuthenticationResponse;
 import fa.training.restapi.dto.response.LoginResult;
-import fa.training.restapi.sercurity.BlackListService;
 import fa.training.restapi.sercurity.CookieService;
-import fa.training.restapi.sercurity.JwtService;
 import fa.training.restapi.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -26,8 +24,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService authService;
     private final CookieService cookieService;
-    private final BlackListService blackListService;
-    private final JwtService jwtService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthenticationResponse>> login(

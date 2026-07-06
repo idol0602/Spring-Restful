@@ -50,7 +50,6 @@ public class AuthService {
             );
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-
             String accessToken = jwtService.generateAccessToken(userDetails);
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
 

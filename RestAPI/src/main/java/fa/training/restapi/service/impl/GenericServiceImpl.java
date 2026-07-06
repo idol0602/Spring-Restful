@@ -109,7 +109,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         int batchSize = 50;
         List<T> savedEntities = new ArrayList<>();
         for (int i = 0; i < entities.size(); i++) {
-            // Using repository.save() since it handles both persist and merge
             savedEntities.add(repository.save(entities.get(i)));
             
             if (i > 0 && i % batchSize == 0) {

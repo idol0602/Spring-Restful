@@ -5,6 +5,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +23,10 @@ public class JwtService {
 
     private static final String SECRET_STRING = "enterprise_secret_key_must_be_extremely_long_and_secure_2026_jsfw_l_a102";
     private final Key signingKey = Keys.hmacShaKeyFor(SECRET_STRING.getBytes());
-    private static final long ACCESS_TOKEN_EXPIRATION_MINUTES = 15;
     private final BlackListService blackListService;
+
+    @Value("${app.security.jwt.access-token-expiration-seconds}")
+    private int accessTokenMaxAge;
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -40,7 +43,7 @@ public class JwtService {
 
     public String generateAccessToken(Map<String, Object> extraClaims, UserDetails userDetails) {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expirationTime = now.plusMinutes(ACCESS_TOKEN_EXPIRATION_MINUTES);
+        LocalDateTime expirationTime = now.plusSeconds(accessTokenMaxAge);
 
         Date issuedAtDate = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
         Date expirationDate = Date.from(expirationTime.atZone(ZoneId.systemDefault()).toInstant());

@@ -7,6 +7,7 @@ import fa.training.restapi.exception.ErrorCode;
 import fa.training.restapi.repository.RefreshTokenRepository;
 import fa.training.restapi.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +20,8 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
-    private static final long REFRESH_TOKEN_EXPIRATION_DAYS = 7;
+    @Value("${app.security.jwt.refresh-token-expiration-seconds}")
+    private int refreshTokenExpirationSeconds;
 
     @Transactional
     public RefreshToken verifyExpiration(RefreshToken token) {
@@ -46,7 +48,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .token(UUID.randomUUID().toString())
                 .user(user)
-                .expiryDate(LocalDateTime.now().plusDays(REFRESH_TOKEN_EXPIRATION_DAYS))
+                .expiryDate(LocalDateTime.now().plusSeconds(refreshTokenExpirationSeconds))
                 .build();
         return refreshTokenRepository.save(refreshToken);
     }

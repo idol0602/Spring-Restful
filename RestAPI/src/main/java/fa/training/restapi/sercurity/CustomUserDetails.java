@@ -15,6 +15,10 @@ public class CustomUserDetails implements UserDetails {
 
     private final User user;
 
+    public User getUser() {
+        return user;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if(user.getRole() == null) {

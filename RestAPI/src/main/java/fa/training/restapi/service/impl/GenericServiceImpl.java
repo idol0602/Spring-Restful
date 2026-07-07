@@ -137,10 +137,7 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         Field[] fields = clazz.getDeclaredFields();
         
         try (PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)))) {
-            // Write BOM for UTF-8 Excel compatibility
             writer.write('\ufeff');
-            
-            // Header
             for (int i = 0; i < fields.length; i++) {
                 writer.print(fields[i].getName());
                 if (i < fields.length - 1) {
@@ -229,7 +226,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
                         Object convertedValue = convertValue(value, field.getType());
                         field.set(entity, convertedValue);
                     } catch (NoSuchFieldException ignored) {
-                        // Ignore fields missing in the entity
                     }
                 }
                 entities.add(entity);
@@ -294,40 +290,26 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
     }
 
     protected void copyNonNullProperties(Object source, Object target) {
-        // Bước 1: Copy các thuộc tính cơ bản (bỏ qua null, collection, entity
-        // reference)
         BeanUtils.copyProperties(source, target, getIgnoredPropertyNames(source));
-
-        // Bước 2: Xử lý riêng các quan hệ JPA trên từng Field
         updateJpaRelationships(source, target);
     }
 
-    /**
-     * Trả về danh sách tên các thuộc tính cần bỏ qua khi BeanUtils.copyProperties:
-     * - Thuộc tính có giá trị null
-     * - Thuộc tính là Collection/Map (sẽ xử lý riêng trong updateJpaRelationships)
-     * - Thuộc tính là Entity (@ManyToOne, @OneToOne) (sẽ xử lý riêng trong
-     * updateJpaRelationships)
-     */
     private String[] getIgnoredPropertyNames(Object source) {
         final BeanWrapper src = new BeanWrapperImpl(source);
         PropertyDescriptor[] pds = src.getPropertyDescriptors();
         Set<String> ignoredNames = new HashSet<>();
 
-        // Tập hợp tên các field có annotation quan hệ JPA
         Set<String> jpaRelationFields = getJpaRelationFieldNames(source.getClass());
 
         for (PropertyDescriptor pd : pds) {
             String name = pd.getName();
             Object srcValue = src.getPropertyValue(name);
 
-            // Bỏ qua nếu giá trị null
             if (srcValue == null) {
                 ignoredNames.add(name);
                 continue;
             }
 
-            // Bỏ qua nếu là trường quan hệ JPA (sẽ xử lý riêng)
             if (jpaRelationFields.contains(name)) {
                 ignoredNames.add(name);
             }
@@ -336,10 +318,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         return ignoredNames.toArray(new String[0]);
     }
 
-    /**
-     * Lấy tên tất cả các field có annotation quan hệ JPA
-     * (@ManyToOne, @OneToOne, @OneToMany, @ManyToMany)
-     */
     private Set<String> getJpaRelationFieldNames(Class<?> clazz) {
         Set<String> names = new HashSet<>();
         Class<?> current = clazz;
@@ -354,9 +332,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         return names;
     }
 
-    /**
-     * Kiểm tra xem field có phải là quan hệ JPA hay không
-     */
     private boolean isJpaRelationField(Field field) {
         return field.isAnnotationPresent(ManyToOne.class)
                 || field.isAnnotationPresent(OneToOne.class)
@@ -364,11 +339,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
                 || field.isAnnotationPresent(ManyToMany.class);
     }
 
-    /**
-     * Xử lý cập nhật các quan hệ JPA dựa trên annotation trên Field.
-     * - @ManyToOne / @OneToOne: Copy tham chiếu nếu source không null
-     * - @OneToMany / @ManyToMany: Đồng bộ collection nếu source không null
-     */
     private void updateJpaRelationships(Object source, Object target) {
         Class<?> clazz = source.getClass();
         while (clazz != null && clazz != Object.class) {
@@ -385,14 +355,12 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
                     throw new RuntimeException("Cannot read field: " + field.getName(), e);
                 }
 
-                // Nếu giá trị nguồn là null → giữ nguyên giá trị đích (không thay đổi)
                 if (srcValue == null) {
                     continue;
                 }
 
                 if (field.isAnnotationPresent(ManyToOne.class)
                         || field.isAnnotationPresent(OneToOne.class)) {
-                    // Quan hệ đơn lẻ (N-1, 1-1): gán trực tiếp tham chiếu
                     try {
                         field.set(target, srcValue);
                     } catch (IllegalAccessException e) {
@@ -400,7 +368,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
                     }
                 } else if (field.isAnnotationPresent(OneToMany.class)
                         || field.isAnnotationPresent(ManyToMany.class)) {
-                    // Quan hệ collection (1-N, N-N): đồng bộ collection
                     syncCollection(field, srcValue, target);
                 }
             }
@@ -408,12 +375,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         }
     }
 
-    /**
-     * Đồng bộ collection: clear collection đích, rồi add lại tất cả phần tử từ
-     * source.
-     * Thiết lập back-reference cho từng phần tử con nếu quan hệ là @OneToMany
-     * (bidirectional).
-     */
     @SuppressWarnings("unchecked")
     private void syncCollection(Field field, Object srcValue, Object target) {
         if (!(srcValue instanceof Collection)) {
@@ -436,10 +397,8 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
 
         Collection<Object> trgCollection = (Collection<Object>) trgValue;
 
-        // Xóa tất cả phần tử cũ
         trgCollection.clear();
 
-        // Thêm phần tử mới và thiết lập back-reference nếu là @OneToMany
         boolean isBidirectional = field.isAnnotationPresent(OneToMany.class);
         for (Object element : srcCollection) {
             if (element != null) {
@@ -451,12 +410,6 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
         }
     }
 
-    /**
-     * Thiết lập tham chiếu ngược (back-reference) trên entity con trỏ về entity
-     * cha.
-     * Tìm field trong child có annotation @ManyToOne hoặc @OneToOne mà kiểu dữ liệu
-     * tương thích với kiểu của parent.
-     */
     private void setBackReference(Object child, Object parent) {
         Class<?> childClass = child.getClass();
         Class<?> parentClass = parent.getClass();
@@ -469,7 +422,7 @@ public abstract class GenericServiceImpl<T, ID> implements GenericService<T, ID>
                     try {
                         field.setAccessible(true);
                         field.set(child, parent);
-                        return; // Đã tìm thấy và gán xong, thoát
+                        return;
                     } catch (IllegalAccessException e) {
                         throw new RuntimeException(
                                 "Cannot set back-reference on " + childClass.getSimpleName() + "." + field.getName(),

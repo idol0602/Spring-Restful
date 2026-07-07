@@ -17,12 +17,7 @@ import org.hibernate.annotations.Nationalized;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "user_seq_gen")
-    @SequenceGenerator(
-            name = "user_seq_gen",
-            sequenceName = "user_seq_id",
-            initialValue = 1,
-            allocationSize = 1
-    )
+    @SequenceGenerator(name = "user_seq_gen", sequenceName = "user_seq_id", initialValue = 1, allocationSize = 1)
     @Column(name = "user_id")
     private Long userId;
 
@@ -46,6 +41,6 @@ public class User {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", nullable = false)
-    @JsonIgnoreProperties({"users"})
+    @JsonIgnoreProperties({ "users" })
     private Role role;
 }

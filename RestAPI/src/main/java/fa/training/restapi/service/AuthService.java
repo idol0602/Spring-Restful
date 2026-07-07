@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -50,7 +52,17 @@ public class AuthService {
             );
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-            String accessToken = jwtService.generateAccessToken(userDetails);
+            Map<String,Object> extraClaims = new HashMap<>();
+            
+            User user = userDetails.getUser();
+            extraClaims.put("userId", user.getUserId());
+            extraClaims.put("email", user.getEmail());
+            extraClaims.put("fullName", user.getFullName());
+            if (user.getRole() != null) {
+                extraClaims.put("role", user.getRole().getRoleName());
+            }
+
+            String accessToken = jwtService.generateAccessToken(extraClaims, userDetails);
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(userDetails.getUsername());
 
             return LoginResult.builder()

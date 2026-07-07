@@ -3,30 +3,35 @@ package fa.training.restapi.sercurity;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class CookieService {
     public static final String ACCESS_TOKEN_COOKIE = "access_token";
     public static final String REFRESH_TOKEN_COOKIE = "refresh_token";
-    private static final int ACCESS_TOKEN_MAX_AGE = 15 * 60;
-    private static final int REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60;
+    
+    @Value("${app.security.jwt.access-token-expiration-seconds}")
+    private int accessTokenMaxAge;
+
+    @Value("${app.security.jwt.refresh-token-expiration-seconds}")
+    private int refreshTokenMaxAge;
 
     public void addAccessTokenCookie(HttpServletResponse response, String token) {
         Cookie cookie = new Cookie(ACCESS_TOKEN_COOKIE, token);
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         cookie.setPath("/");
-        cookie.setMaxAge(ACCESS_TOKEN_MAX_AGE);
+        cookie.setMaxAge(accessTokenMaxAge);
         response.addCookie(cookie);
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String token) {
         Cookie cookie = new Cookie(REFRESH_TOKEN_COOKIE, token);
         cookie.setHttpOnly(true);
-        cookie.setSecure(false);     // Đổi thành true khi deploy HTTPS
-        cookie.setPath("/api/auth"); // Chỉ gửi kèm các request tới /api/auth
-        cookie.setMaxAge(REFRESH_TOKEN_MAX_AGE);
+        cookie.setSecure(false);
+        cookie.setPath("/api/auth");
+        cookie.setMaxAge(refreshTokenMaxAge);
         response.addCookie(cookie);
     }
 
